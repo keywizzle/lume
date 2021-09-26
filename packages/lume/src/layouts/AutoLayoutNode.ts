@@ -192,7 +192,7 @@ export class AutoLayoutNode extends Node {
 	}
 
 	/**
-	 * Removes a child node from another node. The passed in node must be
+	 * @method removeFromLayout - Removes a child node from another node. The passed in node must be
 	 * a child of the node that this method is called upon.
 	 *
 	 * @param {Node} [child] node to be removed

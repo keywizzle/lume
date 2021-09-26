@@ -146,7 +146,7 @@ export class Transformable extends Sizeable {
 	/**
 	 * Set the mount point of the Node.
 	 *
-	 * @param {Object} newValue
+	 * @property {{x: number, y: number, z: number}} newValue
 	 * @param {number} [newValue.x] The x-axis mountPoint to apply.
 	 * @param {number} [newValue.y] The y-axis mountPoint to apply.
 	 * @param {number} [newValue.z] The z-axis mountPoint to apply.
@@ -168,7 +168,7 @@ export class Transformable extends Sizeable {
 	/**
 	 * Set this Node's opacity.
 	 *
-	 * @param {number} opacity A floating point number clamped between 0 and
+	 * @property {number} opacity - A floating point number clamped between 0 and
 	 * 1 (inclusive). 0 is fully transparent, 1 is fully opaque.
 	 */
 	// TODO opacity doesn't belong in Transformable

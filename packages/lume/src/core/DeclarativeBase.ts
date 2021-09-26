@@ -238,6 +238,7 @@ export class DeclarativeBase extends DefaultBehaviors(WithChildren(LumeElement))
 
 			const slotParent = slot.parentNode
 
+			// FIXME A type cast should not be needed here. TS lib.dom.ts is wrong: host should be an HTMLElement, not an Element.
 			if (slotParent instanceof ShadowRoot) return slotParent.host as HTMLElement
 			else return slot.parentElement
 		} else if (parent instanceof ShadowRoot) {
@@ -247,12 +248,14 @@ export class DeclarativeBase extends DefaultBehaviors(WithChildren(LumeElement))
 
 			// a child of a host with a shadow has a composed parent if the child is slotted
 
+			// TODO Use an assignedSlot helper function that works with closed shadow roots.
 			const slot = this.assignedSlot
 
 			if (!slot) return null
 
 			const slotParent = slot.parentNode
 
+			// FIXME A type cast should not be needed here. TS lib.dom.ts is wrong: host should be an HTMLElement, not an Element.
 			if (slotParent instanceof ShadowRoot) return slotParent.host as HTMLElement
 			else return slot.parentElement
 		}
@@ -465,6 +468,9 @@ export class DeclarativeBase extends DefaultBehaviors(WithChildren(LumeElement))
 		// distribute to a deeper slot, because a Scene's ShadowRoot is for the rendering
 		// implementation and not the user's distribution, so we only want to detect
 		// elements slotted directly to the Scene in that case.
+		// TODO composition should be generic here, and the subclasses should be
+		// able to filter elements they don't want, instead of us checking
+		// `isScene` here which assumes a subclass can be a `Scene` class.
 		const newNodes = !this.isScene && slot.assignedSlot ? [] : slot.assignedElements({flatten: true})
 
 		// Save the newNodes to be used as the previousNodes for next time

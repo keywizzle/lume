@@ -471,6 +471,12 @@ export class Scene extends HTMLInterface {
 	attributeChangedCallback(name: string, oldV: string | null, newV: string | null) {
 		super.attributeChangedCallback!(name, oldV, newV)
 
+		// TODO fix @lume/element when it comes to builtin attributes that
+		// reflect from properties. If we use an attribute decorator instead of
+		// attributeChangedCallback for slot, then there will be an infinite
+		// callstack when setting that attribute because setting the property
+		// will trigger attributeChangedCallback which will set the property
+		// which will trigger attributeChangedCallback...
 		if (name === 'slot') {
 			defer(() => {
 				throw new Error(
@@ -596,6 +602,7 @@ export class Scene extends HTMLInterface {
 
 	/** @override */
 	_getParentSize(): XYZValuesObject<number> {
+		// TODO this needs to be improved in case a Scene is child of a ShadowRoot or distributed via a slot.
 		return this.composedLumeParent ? (this.composedLumeParent as Sizeable).calculatedSize : this._elementParentSize
 	}
 
@@ -825,6 +832,9 @@ export class Scene extends HTMLInterface {
 		// This shouldn't be possible.
 		// @prod-prune
 		if (!parent) thro(parentError)
+
+		// TODO In the case that parent is a LUME element, observe the element.size property instead of using a MutationObserver.
+		// if (parent instanceof ImperativeBase) { }
 
 		// TODO use a single ResizeObserver for all scenes.
 

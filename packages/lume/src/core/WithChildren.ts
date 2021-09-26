@@ -3,6 +3,8 @@ import {observeChildren} from '../core/utils.js'
 import {Constructor} from 'lowclass'
 import type {PossibleCustomElement, PossibleCustomElementConstructor} from './PossibleCustomElement.js'
 
+// TODO make a static mode option that will fire callbacks synchronously right when children are added or removed.
+
 export function WithChildren<T extends Constructor<HTMLElement>>(Base: T) {
 	return class WithChildren extends Constructor<PossibleCustomElement, PossibleCustomElementConstructor>(Base) {
 		constructor(...args: any[]) {

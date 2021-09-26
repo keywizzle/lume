@@ -187,6 +187,23 @@ export class ImperativeBase extends Settable(Transformable) {
 		super.connectedCallback()
 
 		this._stopFns.push(
+			// TODO PROPERTY UPDATES These were previously updating rotation
+			// and scale, but they didn't update Three.js objects when turning
+			// webgl off then back on. Moving _updateRotation and _updateScale
+			// to the update() method does the trick for now.  Can we avoid the
+			// update() method and use purely-reactive concepts only?  Perhaps
+			// we can instead use memo'ed computed values so that we can avoid
+			// having the update() method?
+			//
+			// autorun(() => {
+			// 	this.rotation
+			// 	this._updateRotation()
+			// }),
+			// autorun(() => {
+			// 	this.scale
+			// 	this._updateScale()
+			// }),
+
 			autorun(() => {
 				this.sizeMode
 				this.size
@@ -278,6 +295,7 @@ export class ImperativeBase extends Settable(Transformable) {
 
 		// Calculate sizing because proportional size might depend on
 		// the new parent.
+		// TODO _calcSize should be lazy
 		child._calcSize()
 		child.needsUpdate()
 
@@ -737,6 +755,7 @@ export class ImperativeBase extends Settable(Transformable) {
 	 * next animation frame.
 	 */
 	update(_timestamp: number, _deltaTime: number): void {
+		// TODO PROPERTY UPDATES see TODO PROPERTY UPDATES above.
 		this._updateRotation()
 		this._updateScale()
 

@@ -180,6 +180,7 @@ class _Motor {
 
 		const nodesToUpdate = this.#nodesToUpdate
 		for (let i = 0, l = nodesToUpdate.length; i < l; i += 1) {
+			// TODO eliminate use of private.
 			nodesToUpdate[i].__willBeRendered = false
 		}
 		nodesToUpdate.length = 0
