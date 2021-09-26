@@ -48,4 +48,4 @@
 	url = https://github.com/lume/kiwi.git
 [submodule "apps/solidjs+solid-site"]
 	path = apps/solidjs+solid-site
-	url = git@github.com:trusktr/solid-site.git
+	url = https://github.com/trusktr/solid-site.git
