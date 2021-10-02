@@ -1,3 +1,6 @@
+import type {Node} from './Node'
+import type {Scene} from './Scene'
+
 export function epsilon(value: any) {
 	return Math.abs(value) < 0.000001 ? 0 : value
 }
@@ -138,4 +141,39 @@ export function pick<T extends object, K extends keyof T>(source: T, properties:
 
 export function identity(v: any) {
 	return v
+}
+
+// The following isScene and isNode functions are used in order to avoid using
+// instanceof in other files, which would mean that we would need to import
+// Node and Scene as references and would cause a circular depdency problem in
+// such those files.  We can use the "internal module" pattern to solve the
+// issue if we wish to switch back to using instanceof:
+// https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
+
+export function isNode(n: object): n is Node {
+	// @ts-ignore
+	return n.isNode
+}
+
+export function isScene(o: object): o is Scene {
+	// @ts-ignore
+	return o.isScene
+}
+
+const shadowHosts: WeakSet<Element> = new WeakSet()
+
+{
+	const original = Element.prototype.attachShadow
+
+	Element.prototype.attachShadow = function attachShadow(...args) {
+		const result = original.apply(this, args)
+
+		shadowHosts.add(this)
+
+		return result
+	}
+}
+
+export function hasShadow(el: Element): boolean {
+	return shadowHosts.has(el)
 }

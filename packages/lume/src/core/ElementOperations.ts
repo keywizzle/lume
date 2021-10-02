@@ -52,7 +52,7 @@ export class ElementOperations {
 	}
 
 	disconnectChildElement(child: HTMLElement) {
-		// If DeclarativeBase#remove was called first, we don't need to
+		// If HTMLElement#remove was called first, we don't need to
 		// call this again.
 		if (!child.parentNode) return
 

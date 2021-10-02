@@ -3,7 +3,9 @@
 // See: https://esdiscuss.org/topic/how-to-solve-this-basic-es6-module-circular-dependency-problem
 
 import {autorun, booleanAttribute, attribute, numberAttribute, untrack, element, stringAttribute} from '@lume/element'
+import {html} from '@lume/element/dist/html.js'
 import {emits} from '@lume/eventful'
+import {ImperativeBase} from './ImperativeBase.js'
 import {Scene as ThreeScene} from 'three/src/scenes/Scene.js'
 import {PerspectiveCamera as ThreePerspectiveCamera} from 'three/src/cameras/PerspectiveCamera.js'
 // import {AmbientLight} from 'three/src/lights/AmbientLight.js'
@@ -12,13 +14,11 @@ import {Fog} from 'three/src/scenes/Fog.js'
 import {FogExp2} from 'three/src/scenes/FogExp2.js'
 import {WebglRendererThree, ShadowMapTypeString} from '../renderers/WebglRendererThree.js'
 import {Css3dRendererThree} from '../renderers/Css3dRendererThree.js'
-import {HtmlScene as HTMLInterface} from './HtmlScene.js'
-import {defer, thro} from './utils.js'
+import {defer, isNode, thro} from './utils.js'
 import {possiblyPolyfillResizeObserver} from './ResizeObserver.js'
 import {isDisposable} from '../utils/three.js'
 import {Motor} from './Motor.js'
 
-import type {DeclarativeBase} from './DeclarativeBase.js'
 import type {TColor} from '../utils/three.js'
 import type {PerspectiveCamera} from '../cameras/PerspectiveCamera.js'
 import type {XYZValuesObject} from '../xyz-values/XYZValues.js'
@@ -79,8 +79,117 @@ export type SceneAttributes =
  * @extends HTMLScene
  */
 @element
-export class Scene extends HTMLInterface {
+export class Scene extends ImperativeBase {
 	static defaultElementName = 'lume-scene'
+
+	template = () => html`
+		<div class="container">
+			<div ref=${(el: any) => (this._cssLayer = el)} class="CSS3DLayer">
+				${
+					/* WebGLRendererThree places the CSS3DRendererNested domElement
+					here, which contains a <slot> element that child elements of
+					a Scene are distributed into (rendered relative to).
+					*/ ''
+				}
+			</div>
+			<div ref=${(el: any) => (this._glLayer = el)} class="WebGLLayer">
+				${/* WebGLRendererThree places the Three.js <canvas> element here. */ ''}
+			</div>
+			<div ref=${(el: any) => (this._miscLayer = el)} class="MiscellaneousLayer">
+				${/* This layer is used by WebXR to insert UI like the Enter VR/AR button. */ ''}
+				<slot name="misc"></slot>
+			</div>
+		</div>
+	`
+
+	static css = /*css*/ `
+		:host {
+			/*
+			 * All items of the scene graph are hidden until they are mounted in
+			 * a scene (this changes to display:block). 'display' gets toggled
+			 * between "none" and "block" by ImperativeBase depending on if CSS
+			 * rendering is enabled.
+			 */
+			display: none;
+
+			box-sizing: border-box;
+			position: static;
+			overflow: hidden;
+			top: 0;
+			left: 0;
+
+			/*
+				Defaults to [0.5,0.5,0.5] (the Z axis doesn't apply for DOM elements,
+				but will for 3D objects in WebGL.)
+			*/
+			transform-origin: 50% 50% 0; /* default */
+
+			transform-style: preserve-3d;
+		}
+
+		/* The purpose of this is to contain the position:absolute layers so they don't break out of the Scene layout. */
+		.container {
+			position: relative
+		}
+
+		.container,
+		.CSS3DLayer,
+		.MiscellaneousLayer,
+		.WebGLLayer,
+		.WebGLLayer > canvas  {
+			margin: 0; padding: 0;
+			width: 100%; height: 100%;
+			display: block;
+		}
+
+		.CSS3DLayer,
+		.MiscellaneousLayer,
+		.WebGLLayer {
+			/* make sure all layers are stacked on top of each other */
+			position: absolute; top: 0; left: 0;
+		}
+
+		.CSS3DLayer {
+			transform-style: preserve-3d;
+		}
+
+		.WebGLLayer,
+		.MiscellaneousLayer {
+			pointer-events: none;
+		}
+
+		.MiscellaneousLayer > * {
+			/* Allow children of the Misc layer to have pointer events.	Needed for the WebXR button, for example */
+			pointer-events: auto;
+		}
+
+		/*
+		 * This trick is needed in Firefox to remove pointer events from the
+		 * transparent cameraElement from interfering with pointer events on the
+		 * scene objects. We do not wish to interact with this element anyway, as
+		 * it serves only for positioning the view.
+		 */
+		.cameraElement {
+			pointer-events: none;
+		}
+		.cameraElement > * {
+			pointer-events: auto;
+		}
+
+		.vrButton {
+			color: black;
+			border-color: black;
+		}
+	`
+
+	// WebGLRendererThree appends its content into here.
+	_glLayer: HTMLDivElement | null = null
+
+	// CSS3DRendererThree appends its content into here.
+	_cssLayer: HTMLDivElement | null = null
+
+	// Miscellaneous layer. The "Enter VR/AR" button is placed here by Scene, for example.
+	_miscLayer: HTMLDivElement | null = null
 
 	/**
 	 * @readonly
@@ -370,14 +479,6 @@ export class Scene extends HTMLInterface {
 	// size of the element where the Scene is mounted
 	// NOTE: z size is always 0, since native DOM elements are always flat.
 	_elementParentSize: XYZValuesObject<number> = {x: 0, y: 0, z: 0}
-
-	static css = /*css*/ `
-		${HTMLInterface.css}
-		.vrButton {
-			color: black;
-			border-color: black;
-		}
-	`
 
 	drawScene() {
 		this.#glRenderer && this.#glRenderer.drawScene(this)
@@ -916,7 +1017,3 @@ declare global {
 }
 
 type FogMode = 'none' | 'linear' | 'expo2'
-
-function isNode(n: DeclarativeBase): n is Node {
-	return n.isNode
-}

@@ -1,8 +1,6 @@
 import {autorun, booleanAttribute, element} from '@lume/element'
 import {emits} from '@lume/eventful'
-import {HtmlNode as HtmlInterface} from './HtmlNode.js'
-
-import type {BaseAttributes} from './ImperativeBase.js'
+import {BaseAttributes, ImperativeBase} from './ImperativeBase.js'
 
 // TODO Make a way to link to examples that are in separate source files so as
 // not to clutter the inline-documentation when viewing source files.
@@ -85,8 +83,40 @@ export type NodeAttributes = BaseAttributes | 'visible'
  * @extends HTMLNode
  */
 @element
-export class Node extends HtmlInterface {
+export class Node extends ImperativeBase {
 	static defaultElementName = 'lume-node'
+
+	static css = /*css*/ `
+		:host {
+			/*
+			 * All items of the scene graph are hidden until they are mounted in
+			 * a scene (this changes to display:block). This gets toggled
+			 * between "none" and "block" by ImperativeBase depending on if CSS
+			 * rendering is enabled.
+			 */
+			display: none;
+
+			box-sizing: border-box;
+			position: absolute;
+			top: 0;
+			left: 0;
+
+			/*
+			 * Defaults to [0.5,0.5,0.5] (the Z axis doesn't apply for DOM
+			 * elements, but does for 3D objects in WebGL that have any size
+			 * along Z.)
+			 */
+			transform-origin: 50% 50% 0; /* default */
+
+			transform-style: preserve-3d;
+		}
+	`
+
+	/**
+	 * @readonly
+	 * @property {true} isNode - Always true for things that are or inherit from `Node`.
+	 */
+	isNode = true
 
 	/**
 	 * @property {boolean} visible - Whether or not the node will be
@@ -102,11 +132,9 @@ export class Node extends HtmlInterface {
 	 */
 	@booleanAttribute(true) @emits('propertychange') visible = true
 
-	/**
-	 * @readonly
-	 * @property {true} isNode - Always true for things that are or inherit from `Node`.
-	 */
-	isNode = true
+	// prettier-ignore
+	get root() { return this }
+	set root(_v) {}
 
 	/**
 	 * @constructor - Create a Node instance.
@@ -225,6 +253,7 @@ export class Node extends HtmlInterface {
 }
 
 import type {ElementAttributes} from '@lume/element'
+import {isNode} from './utils.js'
 
 declare module '@lume/element' {
 	namespace JSX {
@@ -248,8 +277,4 @@ declare module '@lume/element' {
 			has?: string
 		}
 	}
-}
-
-function isNode(n: any): n is Node {
-	return n.isNode
 }

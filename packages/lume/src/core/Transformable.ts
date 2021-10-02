@@ -23,8 +23,6 @@ const alignPoint = new WeakMap<Transformable, XYZNumberValues>()
 const mountPoint = new WeakMap<Transformable, XYZNumberValues>()
 const opacity = new WeakMap<Transformable, number>()
 
-// Transformable extends TreeNode (indirectly through Sizeable) because it
-// needs to be aware of its `parent` when calculating align adjustments.
 @element
 export class Transformable extends Sizeable {
 	constructor() {

@@ -1,7 +1,7 @@
 import {useDefaultNames, html} from '../index.js'
-import {hasShadow} from './DeclarativeBase.js'
 import type {Node} from './Node.js'
 import type {Scene} from './Scene.js'
+import {hasShadow} from './utils.js'
 
 useDefaultNames()
 

@@ -6,31 +6,11 @@ import {Motor} from './Motor.js'
 import {CSS3DObjectNested} from '../lib/three/CSS3DRendererNested.js'
 import {disposeObject} from '../utils/three.js'
 import {Events} from './Events.js'
-import {Settable} from '../utils/Settable.js'
-import {defer, toRadians} from './utils.js'
+import {defer, isNode, isScene, toRadians} from './utils.js'
 
-import type {Node} from './Node.js'
 import type {Scene} from './Scene.js'
-import type {ConnectionType} from './DeclarativeBase.js'
 import type {TransformableAttributes} from './Transformable.js'
-
-// The following isScene and isNode functions are used in order to avoid using
-// instanceof, which would mean that we would need to import Node and Scene as
-// references, which would cause a circular depdency problem. The problem exists
-// only when compiling to CommonJS modules, where the initImperativeBase trick
-// won't work because functions don't hoiste in CommonJS like they do with
-// ES-Module-compliant builds like with Webpack. We can look into the "internal
-// module" pattern to solve the issue if we wish to switch back to using
-// instanceof:
-// https://medium.com/visual-development/how-to-fix-nasty-circular-dependency-issues-once-and-for-all-in-javascript-typescript-a04c987cf0de
-
-function isScene(s: ImperativeBase): s is Scene {
-	return s.isScene
-}
-
-function isNode(n: ImperativeBase): n is Node {
-	return n.isNode
-}
+import type {ComposedTreeConnectionType} from './TreeNode.js'
 
 const threeJsPostAdjustment = [0, 0, 0]
 const alignAdjustment = [0, 0, 0]
@@ -68,15 +48,20 @@ export type BaseAttributes = TransformableAttributes
 // function makeImperativeBase() {
 // TODO switch to @element('element-name', false) and use defineElement in html/index.ts
 @element
-export class ImperativeBase extends Settable(Transformable) {
-	// TODO re-organize variables like isScene and isNode, so they come from
-	// one place. f.e. isScene is currently also used in DeclarativeBase.
+export class ImperativeBase extends Transformable {
+	static defaultElementName: string = 'ERROR: Subclass needs to set defaultElementName'
+	// static #definedElementName?: string // doesn't work
+	static __definedElementName?: string // works
 
-	/** @property {boolean} isScene - True if a subclass of this class is a Scene. */
-	isScene = false
+	static define(name?: string) {
+		name = name || this.defaultElementName
+		customElements.define(name, this)
+		this.__definedElementName = name
+	}
 
-	/** @property {boolean} isNode - True if a subclass of this class is a Node. */
-	isNode = false
+	static get definedElementName() {
+		return this.__definedElementName || null
+	}
 
 	/**
 	 * @readonly
@@ -273,7 +258,7 @@ export class ImperativeBase extends Settable(Transformable) {
 	 * (childComposedCallback with "actual" being passed in is essentially the
 	 * same as childConnectedCallback).
 	 */
-	childComposedCallback(child: Element, _connectionType: ConnectionType): void {
+	childComposedCallback(child: Element, _connectionType: ComposedTreeConnectionType): void {
 		if (!(child instanceof ImperativeBase)) return
 
 		// Calculate sizing because proportional size might depend on
@@ -284,7 +269,7 @@ export class ImperativeBase extends Settable(Transformable) {
 		this.__possiblyLoadThree(child)
 	}
 
-	childUncomposedCallback(child: Element, _connectionType: ConnectionType): void {
+	childUncomposedCallback(child: Element, _connectionType: ComposedTreeConnectionType): void {
 		if (!(child instanceof ImperativeBase)) return
 		this.__possiblyUnloadThree(child)
 	}
