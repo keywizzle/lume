@@ -1105,11 +1105,11 @@ const shapesExample = stripIndent(html`
 			for (const shape of shapes) {
 				if (input.value === 'triangles') {
 					// Set a Shape instance
-					shape.shape = new LUME.THREE.Shape([
-						new LUME.THREE.Vector2(-12, 0),
-						new LUME.THREE.Vector2(12, 0),
-						new LUME.THREE.Vector2(0, 12),
-						new LUME.THREE.Vector2(-12, 0),
+					shape.shape = new THREE.Shape([
+						new THREE.Vector2(-12, 0),
+						new THREE.Vector2(12, 0),
+						new THREE.Vector2(0, 12),
+						new THREE.Vector2(-12, 0),
 					])
 				} else if (input.value === 'trapezoids') {
 					// Set the 'shape' attribute with a list of points

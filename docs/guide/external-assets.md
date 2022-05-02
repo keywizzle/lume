@@ -151,20 +151,21 @@ rendering is enabled (this saves CPU/Memory if you don't need CSS rendering).
         obj.traverse(node => {
 
             if ('geometry' in node) {
+                // TODO('THREE export removed from LUME, update bundle for external THREE option, and update to BufferGeometry')
 
-                // Re-center the geometry around the local origin.
-                node.geometry.center()
+                // // Re-center the geometry around the local origin.
+                // node.geometry.center()
 
-                // In case the model's shading looks flat on each polygon, this is a trick to
-                // make it look smooth. See https://discourse.threejs.org/t/5531
-                // TODO, when we upgrade to Three.js r125 or higher, use this
-                // approach instead: https://discourse.threejs.org/t/5531/10
-                const tempGeometry = new LUME.THREE.Geometry().fromBufferGeometry( node.geometry );
-                tempGeometry.mergeVertices();
-                tempGeometry.computeVertexNormals();
-                node.geometry = new LUME.THREE.BufferGeometry().fromGeometry( tempGeometry );
+                // // In case the model's shading looks flat on each polygon, this is a trick to
+                // // make it look smooth. See https://discourse.threejs.org/t/5531
+                // // TODO, when we upgrade to Three.js r125 or higher, use this
+                // // approach instead: https://discourse.threejs.org/t/5531/10
+                // const tempGeometry = new LUME.THREE.Geometry().fromBufferGeometry( node.geometry );
+                // tempGeometry.mergeVertices();
+                // tempGeometry.computeVertexNormals();
+                // node.geometry = new LUME.THREE.BufferGeometry().fromGeometry( tempGeometry );
 
-                // IDEA: perhaps scale the geometry so it fits within the \`size\` of the node.
+                // // IDEA: perhaps scale the geometry so it fits within the \`size\` of the node.
 
             }
 
