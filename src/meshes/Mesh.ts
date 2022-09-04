@@ -1,5 +1,5 @@
 import {Mesh as ThreeMesh} from 'three/src/objects/Mesh.js'
-import {autorun, booleanAttribute, element} from '@lume/element'
+import {/*attribute,*/ autorun, booleanAttribute, element} from '@lume/element'
 import {Node} from '../core/Node.js'
 import {autoDefineElements} from '../LumeConfig.js'
 
@@ -55,6 +55,11 @@ export class Mesh extends Node {
 			return !initialBehaviors.some(b => b.endsWith('-material'))
 		},
 	}
+
+	// TODO should these be here? Or via the ShaderMaterialBehavior behavior types?
+	// @attribute uniforms?: string = ''
+	// @attribute vertexShader?: string = ''
+	// @attribute fragmentShader?: string = ''
 
 	/**
 	 * @property {boolean} castShadow

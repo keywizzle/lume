@@ -1,6 +1,5 @@
 import {autorun, booleanAttribute, element} from '@lume/element'
 import {ImperativeBase} from './ImperativeBase.js'
-import {defer} from './utils.js'
 import {autoDefineElements} from '../LumeConfig.js'
 
 import type {BaseAttributes} from './ImperativeBase.js'
@@ -206,7 +205,7 @@ export class Node extends ImperativeBase {
 			// calling a super method of a super class that relies on a private
 			// field that is not initialized yet, causing an error. Welcome to
 			// TC39's vision of inheritance for JavaScript.
-			defer(() => this.needsUpdate())
+			queueMicrotask(() => this.needsUpdate())
 		}
 	}
 

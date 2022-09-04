@@ -1,0 +1,145 @@
+<script src="./wrapper.js" title="Anastasiia"></script>
+
+<style>
+	[slot='header'] {
+		background: rgba(0, 0, 0, 0.4);
+	}
+	[slot='body'] {
+		background: skyblue;
+	}
+	[slot='hero'] {
+		background: deeppink;
+	}
+	[slot='categories'] {
+		background: purple;
+	}
+	#scrollknob {
+		background: rgba(0, 0, 0, 0.4);
+	}
+</style>
+
+<script>
+	LUME.defineElements()
+	const {html} = LUME
+</script>
+
+<lume-scene id="scene" perspective="800" touch-action="none" webgl>
+	<lume-ambient-light color="white" intensity="0.6"></lume-ambient-light>
+
+	<lume-point-light position="200 -200 200" intensity="0.6" color="white" slot="camera-child"></lume-point-light>
+
+	<lume-slideout size="1 1" size-mode="proportional proportional">
+		<lume-autolayout
+			id="layout"
+			visual-format="
+				V:|[header(150)]
+				H:|[header]|
+				V:|[body]|
+				H:|[body]|
+			"
+			size="1 1"
+			size-mode="proportional proportional"
+			slot="content"
+		>
+			<lume-node
+				id="header"
+				size="1 1"
+				size-mode="proportional proportional"
+				slot="header"
+				position="0 0 1"
+			></lume-node>
+
+			<lume-node id="scroller" size="1 1" size-mode="proportional proportional" slot="body">
+				<lume-autolayout
+					id="inner"
+					visual-format="
+						V:|[hero(80%)][categories(250)]
+
+						H:|[hero]|
+						H:|[categories]|
+					"
+					size="1 1"
+					size-mode="proportional proportional"
+					slot="content"
+				>
+					<lume-node size="1 1" size-mode="proportional proportional" slot="hero"></lume-node>
+					<lume-node size="1 1" size-mode="proportional proportional" slot="categories"></lume-node>
+				</lume-autolayout>
+
+				<lume-node id="scrollknob" size="10 100 10" align-point="1 0" mount-point="1 0" position="0 0 10"></lume-node>
+			</lume-node>
+		</lume-autolayout>
+	</lume-slideout>
+</lume-scene>
+
+<script type="module">
+	const {ScrollFling, createEffect, untrack, createSignal, onCleanup} = LUME
+
+	// BEFORE making fling reactive
+
+	// const fling = new ScrollFling({
+	// 	target: scene,
+	// 	y: 0,
+	// 	minY: 0,
+	// 	maxY: 2000,
+	// 	scrollFactor: 0.3,
+	// }).start()
+
+	// createEffect(() => {
+	// 	fling.y
+
+	// 	untrack(() => {
+	// 		inner.position.y = -fling.y
+	// 		scrollknob.alignPoint.y = fling.y / 2000
+	// 		scrollknob.mountPoint.y = fling.y / 2000
+	// 	})
+	// })
+
+	// AFTER making fling reactive
+
+	createEffect(() => {
+		let height = 0
+
+		for (const child of Array.from(inner.children)) height += child.calculatedSize.y
+
+		// inner.size.y = height
+		console.log('height cal', height)
+
+		debugger
+
+		console.log('new fling params ------> ', {
+			target: scene,
+			y: 0,
+			minY: 0,
+			// maxY: height,
+			maxY: 1000,
+			scrollFactor: 0.3,
+		})
+
+		const fling = new ScrollFling({
+			target: scene,
+			y: 0,
+			minY: 0,
+			// maxY: height,
+			maxY: 1000,
+			scrollFactor: 0.3,
+		})
+
+		console.log('fling 1 -----> ', fling, fling.y)
+
+		fling.start()
+
+		createEffect(() => {
+			console.log('fling 2 -----> ', fling, fling.y)
+			debugger
+
+			untrack(() => {
+				inner.position.y = -fling.y
+				scrollknob.alignPoint.y = fling.y / 1000
+				scrollknob.mountPoint.y = fling.y / 1000
+			})
+		})
+
+		onCleanup(() => fling.stop())
+	})
+</script>

@@ -1,7 +1,6 @@
 import {PerspectiveCamera as ThreePerspectiveCamera} from 'three/src/cameras/PerspectiveCamera.js'
 import {numberAttribute, booleanAttribute, autorun, untrack, element} from '@lume/element'
 import {Node, NodeAttributes} from '../core/Node.js'
-import {defer} from '../core/utils.js'
 import {autoDefineElements} from '../LumeConfig.js'
 
 import type {Scene} from '../core/Scene.js'
@@ -119,7 +118,7 @@ export class PerspectiveCamera extends Node {
 				untrack(() => {
 					this.#lastKnownScene = this.scene
 					this.#setSceneCamera(this.active ? undefined : 'unset')
-					defer(() => stop())
+					queueMicrotask(() => stop())
 				})
 			}
 		})

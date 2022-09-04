@@ -1,5 +1,5 @@
 import {defineElements, html} from '../index.js'
-import {hasShadow} from './DeclarativeBase.js'
+import {hasShadow} from './CompositionTracker'
 import type {Node} from './Node.js'
 import type {Scene} from './Scene.js'
 
