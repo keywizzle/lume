@@ -7,10 +7,10 @@
     el: '#example',
     template: '<live-code class="full" :template="code" mode="html>iframe" :debounce="1000" />',
     data: {
-      code: stripIndent(`
+      code: stripIndent(/*html*/`
         <body touch-action="none">
           <script src="${location.origin+location.pathname}global.js"><\/script>
-          <!-- pep.js provides the pointer events (pointermove, pointerdown, etc) -->
+          <!-- pointer events polyfill (touch-action support for Safari 13 (2019) and lower) -->
           <script src="https://code.jquery.com/pep/0.4.3/pep.js"><\/script>
 
           <style>
@@ -24,9 +24,14 @@
 
           <!-- In general it is always better to ensure custom elements are defined before using them. -->
           <!-- FIXME: If we move this script to after the scene's markup, then the last item in the layout never becomes visible for some reason. -->
-          <script> LUME.defineElements() <\/script>
+          <script>
+              LUME.defineElements()
+              const {html} = LUME
+              const names = ['one', 'two', 'three', 'four', 'five']
+          <\/script>
 
-          <lume-scene id="scene" webgl>
+          <lume-scene id="scene" webgl touch-action="none">
+              <lume-camera-rig align-point="0.5 0.5"></lume-camera-rig>
               <lume-ambient-light intensity="0.1"></lume-ambient-light>
               <lume-point-light
                   id="light"
@@ -50,27 +55,29 @@
                       >
                   </lume-sphere>
               </lume-point-light>
-              <lume-autolayout-node
+              <lume-autolayout
                   id="layout"
-                  size="100 100 0" TODO="why do we need Z size 0 here, but not in the imperative example?"
+                  TODO="why do we need Z size 0 here, but not in the imperative example?"
+                  size="600 400 0"
                   position="0 0 0"
                   align-point=" 0.5 0.5 0"
                   mount-point=" 0.5 0.5 0"
                   visual-format="
-                      V:|-[child1(child3)]-[child3]-|
-                      V:|-[child2(child4)]-[child4]-|
-                      V:[child5(child4)]-|
-                      |-[child1(child2)]-[child2]-|
-                      |-[child3(child4,child5)]-[child4]-[child5]-|
+                      V:|-[one(three)]-[three]-|
+                      V:|-[two(four)]-[four]-|
+                      V:[five(four)]-|
+                      |-[one(two)]-[two]-|
+                      |-[three(four,five)]-[four]-[five]-|
                   "
                   style="background: rgba(0,0,0,0.3)"
               >
-                  <lume-mixed-plane size="1 1 0" color="deeppink" class="child1">This is a paragraph of text to show that it reflows when the size of the layout changes size so that the awesomeness can be observed in its fullness.</lume-mixed-plane>
-                  <lume-mixed-plane size="1 1 0" color="deeppink" class="child2">This is a paragraph of text to show that it reflows when the size of the layout changes size so that the awesomeness can be observed in its fullness.</lume-mixed-plane>
-                  <lume-mixed-plane size="1 1 0" color="deeppink" class="child3">This is a paragraph of text to show that it reflows when the size of the layout changes size so that the awesomeness can be observed in its fullness.</lume-mixed-plane>
-                  <lume-mixed-plane size="1 1 0" color="deeppink" class="child4">This is a paragraph of text to show that it reflows when the size of the layout changes size so that the awesomeness can be observed in its fullness.</lume-mixed-plane>
-                  <lume-mixed-plane size="1 1 0" color="deeppink" class="child5">This is a paragraph of text to show that it reflows when the size of the layout changes size so that the awesomeness can be observed in its fullness.</lume-mixed-plane>
-              </lume-autolayout-node>
+                  <!-- prettier-ignore -->
+                  <script>
+                    layout.append(...names.map(name => html\`
+                      <lume-mixed-plane size="1 1" size-mode="proportional proportional" color="deeppink" slot=\${name}>This is a paragraph of text to show that it reflows when the size of the layout changes size so that the awesomeness can be observed in its fullness.</lume-mixed-plane>
+                    \`))
+                  <\/script>
+              </lume-autolayout>
           </lume-scene>
 
           <script>
@@ -87,31 +94,35 @@
 
               const vfl1 = \`
                   //viewport aspect-ratio:3/1 max-height:300
-                  H:|-[row:[child1(child2,child5)]-[child2]-[child5]]-|
+                  H:|-[row:[one(two,five)]-[two]-[five]]-|
                   V:|-[row]-|
               \`
               const vfl2 = \`
-                  V:|-[child1(child3)]-[child3]-|
-                  V:|-[child2(child4)]-[child4]-|
-                  V:[child5(child4)]-|
-                  |-[child1(child2)]-[child2]-|
-                  |-[child3(child4,child5)]-[child4]-[child5]-|
+                  V:|-[one(three)]-[three]-|
+                  V:|-[two(four)]-[four]-|
+                  V:[five(four)]-|
+                  |-[one(two)]-[two]-|
+                  |-[three(four,five)]-[four]-[five]-|
               \`
 
               let lastSize = 'big'
               let size = 'big' // or 'small'
 
-              layout.on('sizechange', ({x, y, z}) => {
-                  if (x <= 600) size = 'small'
-                  else size = 'big'
+              setTimeout(() => {
+                LUME.autorun(() => {
+                    const {x, y, z} = layout.calculatedSize
 
-                  if (lastSize !== size) {
-                      if (size === 'small') layout.visualFormat = vfl1
-                      else layout.visualFormat = vfl2
-                  }
+                    if (x <= 600) size = 'small'
+                    else size = 'big'
 
-                  lastSize = size
-              })
+                    if (lastSize !== size) {
+                        if (size === 'small') layout.visualFormat = vfl1
+                        else layout.visualFormat = vfl2
+                    }
+
+                    lastSize = size
+                })
+              }, 1000);
           <\/script>
         </body>
       `).trim()

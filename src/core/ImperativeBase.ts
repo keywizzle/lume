@@ -7,11 +7,11 @@ import {CSS3DObjectNested} from '../renderers/CSS3DRendererNested.js'
 import {disposeObject} from '../utils/three.js'
 import {Events} from './Events.js'
 import {Settable} from '../utils/Settable.js'
-import {defer, toRadians} from './utils.js'
+import {toRadians} from './utils/index.js'
 
 import type {Node} from './Node.js'
 import type {Scene} from './Scene.js'
-import type {ConnectionType} from './DeclarativeBase.js'
+import type {CompositionType} from './CompositionTracker'
 import type {TransformableAttributes} from './Transformable.js'
 
 // The following isScene and isNode functions are used in order to avoid using
@@ -201,9 +201,10 @@ export class ImperativeBase extends Settable(Transformable) {
 	 */
 	recreateThree() {
 		const children = this.__three?.children
+
 		this.__disposeThree()
 		// The three getter is used here, which makes a new instance
-		this._connectThree()
+		this.__connectThree()
 
 		// Three.js crashes on arrays of length 0.
 		if (children && children.length) this.three.add(...children)
@@ -251,24 +252,40 @@ export class ImperativeBase extends Settable(Transformable) {
 		const children = this.__threeCSS?.children
 		this.__disposeThreeCSS()
 		// The threeCSS getter is used here, which makes a new instance
-		this._connectThreeCSS()
+		this.__connectThreeCSS()
 
 		// Three.js crashes on arrays of length 0.
 		if (children && children.length) this.threeCSS.add(...children)
 	}
 
+	// #previousParent: Element | null = null
+	#sameTaskAfterDisconnect = false
+
 	override connectedCallback() {
+		if (this.tagName.includes('SPHERE')) console.log('composition: connected', this)
+		console.log(' ---- connected', this.id)
+
 		super.connectedCallback()
+
+		// If reconnected right away in the same task (f.e. moving elements around synchronously)
+		if (this.#sameTaskAfterDisconnect) {
+			// if (this.#previousParent !== this.parentElement) {
+			// 	console.log('     re-parented, unload and reload', this.id)
+			// 	this.__unloadThreeIfNode(this)
+			// 	this.__loadThreeIfNode(this)
+			// }
+		} else {
+		}
+
+		// this.#previousParent = this.parentElement
 
 		this._stopFns.push(
 			autorun(() => {
+				if (this.id === 'one' && this.scene) debugger
 				this.scene
 				this.sizeMode
 				this.size
 
-				// Code wrapped with `untrack` causes dependencies not to be
-				// tracked within that code, so it won't register more
-				// dependencies for this autorun.
 				untrack(() => {
 					// TODO: Size calculation should happen in a render task
 					// just like _calculateMatrix, instead of on each property
@@ -320,10 +337,43 @@ export class ImperativeBase extends Settable(Transformable) {
 	}
 
 	override disconnectedCallback(): void {
+		if (this.tagName.includes('SPHERE')) console.log('composition: disconnected', this)
+		console.log(' ---- disconnected', this.id)
+
 		super.disconnectedCallback()
 
-		this.__possiblyUnloadThree(this)
-		this._scene = null
+		this.#sameTaskAfterDisconnect = true
+
+		// const prevParent = this.#previousParent
+
+		queueMicrotask(() => {
+			this.#sameTaskAfterDisconnect = false
+
+			console.log('  -- disconnected microtask', this.id)
+
+			// if (!this.isConnected) {
+			// 	console.log('     disconnected, unload', this.id)
+			// 	// if not connected, unload regardless if parent or no parent.
+			// 	this.__unloadThreeIfNode(this)
+			// } else {
+			// 	if (prevParent !== this.parentElement) {
+			// 		console.log('     re-parented, unload and reload', this.id)
+			// 		// reconnected to a new parent, unload/reload to reparent
+			// 		this.__unloadThreeIfNode(this)
+			// 		this.__loadThreeIfNode(this)
+			// 	} else {
+			// 		console.log('     reconnected to same parent, nothing to do', this.id)
+			// 		// nothing to do, reconnected to the same parent, keep things loaded
+			// 	}
+			// }
+		})
+
+		if (this.id === 'one') {
+			// console.log('set this._scene null')
+			debugger
+		}
+
+		// this._scene = null
 	}
 
 	/**
@@ -339,8 +389,13 @@ export class ImperativeBase extends Settable(Transformable) {
 	 * (childComposedCallback with "actual" being passed in is essentially the
 	 * same as childConnectedCallback).
 	 */
-	override childComposedCallback(child: Element, _connectionType: ConnectionType): void {
+	override childComposedCallback(child: Element, _connectionType: CompositionType): void {
 		if (!(child instanceof ImperativeBase)) return
+
+		if (child.tagName.includes('SPHERE')) console.log('composition: child composed', this, child)
+		console.log('   - composed', child.id)
+
+		// this.needsUpdate() // TODO needed??????? No harm in adding an extra call.
 
 		// This code may run during a super constructor (f.e. while constructing
 		// a Scene and it calls `super()`), therefore a Scene's _scene property
@@ -348,21 +403,44 @@ export class ImperativeBase extends Settable(Transformable) {
 		// an alternative.
 		const scene = this._scene ?? (isScene(this) && this)
 
-		if (scene) this.__giveSceneToChildrenAndMaybeLoadThree(child, scene)
+		if (scene) this.__giveSceneToChildrenAndLoadThree(child, scene)
 	}
 
-	override childUncomposedCallback(child: Element, _connectionType: ConnectionType): void {
+	override childUncomposedCallback(child: Element, _connectionType: CompositionType): void {
 		if (!(child instanceof ImperativeBase)) return
-		this.__possiblyUnloadThree(child)
-		child._scene = null
+
+		if (child.tagName.includes('SPHERE')) console.log('composition: child uncomposed', this, child)
+		console.log('   - uncomposed', child.id)
+
+		// Update the parent because the child is gone, but the scene needs a
+		// redraw, and we can't update the child because it is already gone.
+		this.needsUpdate()
+
+		console.log('######## uncomposed, traverse children', child.id)
+
+		// PREVIOUS
+		// this.__unloadThreeIfNode(child)
+		// child._scene = null
+
+		// NEW
+		if (this._scene) {
+			child.traverseSceneGraph(node => {
+				console.log(' ####### traversed child', node.id)
+
+				this.__unloadThreeIfNode(node)
+				node._scene = null
+				console.log('     set child._scene null', node.id)
+			})
+		}
 	}
 
-	__giveSceneToChildrenAndMaybeLoadThree(node: ImperativeBase, scene: Scene) {
+	__giveSceneToChildrenAndLoadThree(node: ImperativeBase, scene: Scene) {
 		node.traverseSceneGraph(subnode => {
 			if (node !== this) {
+				console.log('     set subnode._scene to Scene', subnode.id)
 				subnode._scene = scene
 			}
-			this.__possiblyLoadThree(subnode)
+			this.__loadThreeIfNode(subnode)
 		})
 	}
 
@@ -371,7 +449,10 @@ export class ImperativeBase extends Settable(Transformable) {
 		throw 'Node and Scene implement this'
 	}
 
-	__possiblyLoadThree(node: ImperativeBase): void {
+	__loadThreeIfNode(node: ImperativeBase): void {
+		console.log('     __loadThreeIfNode', node.id)
+		debugger
+
 		// Skip scenes because scenes call their own _trigger* methods based on
 		// values of their webgl or enabled-css attributes.
 		if (!isNode(node)) return
@@ -380,7 +461,9 @@ export class ImperativeBase extends Settable(Transformable) {
 		node._triggerLoadCSS()
 	}
 
-	__possiblyUnloadThree(node: ImperativeBase): void {
+	__unloadThreeIfNode(node: ImperativeBase): void {
+		console.log('     __unloadThreeIfNode', node.id)
+
 		// Skip scenes because scenes call their own _trigger* methods based on
 		// values of their webgl or enabled-css attributes.
 		if (!isNode(node)) return
@@ -432,6 +515,8 @@ export class ImperativeBase extends Settable(Transformable) {
 	 * ```
 	 */
 	needsUpdate(): void {
+		if (!this.scene) return
+
 		// we don't need to render until we're connected into a tree with a scene.
 		// if (!this.scene || !this.isConnected) return
 		// TODO make sure we render when connected into a tree with a scene
@@ -495,10 +580,13 @@ export class ImperativeBase extends Settable(Transformable) {
 		return new CSS3DObjectNested(this)
 	}
 
-	_connectThree(): void {
+	__connectThree(): void {
+		// TODO disconnect this.three manually here in case there is no composed parent, so it isn't left connected to a previous parent accidentally?
 		this.composedSceneGraphParent?.three.add(this.three)
 
-		// Although children connect themselves during _connectThree when
+		// TODO manually clear children here in case any are stale from previous composed children?
+
+		// Although children connect themselves during __connectThree when
 		// triggered via _loadGL, we still need to do this in case a child is
 		// already loaded but the parent was re-distributed (f.e. to a different
 		// slot, in which case unload/load will happen for that parent),
@@ -511,7 +599,7 @@ export class ImperativeBase extends Settable(Transformable) {
 		this.needsUpdate()
 	}
 
-	_connectThreeCSS(): void {
+	__connectThreeCSS(): void {
 		this.composedSceneGraphParent?.threeCSS.add(this.threeCSS)
 
 		for (const child of this.composedLumeChildren) {
@@ -552,11 +640,14 @@ export class ImperativeBase extends Settable(Transformable) {
 
 		if (this._glLoaded) return false
 
+		// create the object in case it isn't already (via the getter)
+		const three = this.three
+
 		// we don't let Three update local matrices automatically, we do
 		// it ourselves in _calculateMatrix and _calculateWorldMatricesInSubtree
-		this.three.matrixAutoUpdate = false
+		three.matrixAutoUpdate = false
 
-		this._connectThree()
+		this.__connectThree()
 		this.needsUpdate()
 
 		this._glLoaded = true
@@ -583,11 +674,14 @@ export class ImperativeBase extends Settable(Transformable) {
 
 		if (this._cssLoaded) return false
 
+		// create the object in case it isn't already (via the getter)
+		const threeCSS = this.threeCSS
+
 		// We don't let Three update local matrices automatically, we do
 		// it ourselves in _calculateMatrix and _calculateWorldMatricesInSubtree.
-		this.threeCSS.matrixAutoUpdate = false
+		threeCSS.matrixAutoUpdate = false
 
-		this._connectThreeCSS()
+		this.__connectThreeCSS()
 		this.needsUpdate()
 
 		this._cssLoaded = true
@@ -612,7 +706,7 @@ export class ImperativeBase extends Settable(Transformable) {
 
 		this.emit(Events.BEHAVIOR_GL_LOAD, this)
 
-		defer(async () => {
+		queueMicrotask(async () => {
 			// FIXME Can we get rid of the code deferral here? Without the
 			// deferral of a total of three microtasks, then GL_LOAD may
 			// fire before behaviors have loaded GL (when their
@@ -631,7 +725,7 @@ export class ImperativeBase extends Settable(Transformable) {
 	_triggerUnloadGL(): void {
 		if (!this._unloadGL()) return
 		this.emit(Events.BEHAVIOR_GL_UNLOAD, this)
-		defer(() => this.emit(Events.GL_UNLOAD, this))
+		queueMicrotask(() => this.emit(Events.GL_UNLOAD, this))
 	}
 
 	_triggerLoadCSS(): void {

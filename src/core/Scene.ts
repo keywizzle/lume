@@ -2,6 +2,8 @@
 // permutation to detect circular dependency errors.
 // See: https://esdiscuss.org/topic/how-to-solve-this-basic-es6-module-circular-dependency-problem
 
+// TODO touch-action none auto-applied to scenes for interaction with elements like camera-rig, etc.
+
 import {
 	autorun,
 	booleanAttribute,
@@ -22,7 +24,6 @@ import {FogExp2} from 'three/src/scenes/FogExp2.js'
 import {WebglRendererThree, ShadowMapTypeString} from '../renderers/WebglRendererThree.js'
 import {Css3dRendererThree} from '../renderers/Css3dRendererThree.js'
 import {ImperativeBase} from './ImperativeBase.js'
-import {defer} from './utils.js'
 import {isDisposable} from '../utils/three.js'
 import {Motor} from './Motor.js'
 import {autoDefineElements} from '../LumeConfig.js'
@@ -105,6 +106,12 @@ export class Scene extends ImperativeBase {
 	 */
 	// TODO @readonly jsdoc tag
 	override readonly isScene = true
+
+	// Skip ShadowRoot observation for Scene instances. Only Scene actual
+	// children or distributed children are considered in the LUME scene
+	// graph because Scene's ShadowRoot already exists and serves in the
+	// rendering implementation and is not the user's.
+	override skipShadowObservation = this.isScene
 
 	/**
 	 * @property {boolean} enableCss -
@@ -749,7 +756,7 @@ export class Scene extends ImperativeBase {
 		super.attributeChangedCallback!(name, oldV, newV)
 
 		if (name === 'slot') {
-			defer(() => {
+			queueMicrotask(() => {
 				throw new Error(
 					'Assigning a <lume-scene> to a slot is not currently supported and may not work as expected. Instead, wrap the <lume-scene> in another element like a <div>, then assign the wrapper to the slot.',
 				)
@@ -922,6 +929,24 @@ export class Scene extends ImperativeBase {
 		//this.three.add( ambientLight )
 
 		this.#glRenderer = this.#getGLRenderer('three')
+
+		const canvas = this.#glRenderer.sceneStates.get(this)?.renderer.domElement!
+
+		const ro = new ResizeObserver(changes => {
+			for (const change of changes) {
+				console.log(
+					' -------- CANVAS SIZE CHANGE:',
+					'CSS PIXEL SIZE:',
+					change.borderBoxSize[0].inlineSize,
+					change.borderBoxSize[0].blockSize,
+					'PHYSICAL PIXEL SIZE:',
+					change.devicePixelContentBoxSize[0].inlineSize,
+					change.devicePixelContentBoxSize[0].blockSize,
+				)
+			}
+		})
+
+		ro.observe(canvas, {box: 'border-box'})
 
 		// If _loadGL is firing, then this.webgl must be true, therefore
 		// this.#glRenderer must be defined in any of the below autoruns.
@@ -1145,10 +1170,14 @@ export class Scene extends ImperativeBase {
 		// @prod-prune
 		if (!parent) throw new Error('A Scene can only be child of HTMLElement or ShadowRoot (f.e. not an SVGElement).')
 
+		console.log('SET UP SCENE PARENT SIZE CHANGE OBSERVER')
+
 		// TODO use a single ResizeObserver for all scenes.
 
 		this.#resizeObserver = new ResizeObserver(changes => {
-			for (const change of changes) {
+			// prettier-ignore
+			// for (const change of changes) {
+			{ const change = changes[changes.length - 1]
 				// Use the newer API if available.
 				// NOTE We care about the contentBoxSize (not the
 				// borderBoxSize) because the content box is the area in
@@ -1180,6 +1209,16 @@ export class Scene extends ImperativeBase {
 					const {width, height} = change.contentRect
 					this.#checkElementParentSize(width, height)
 				}
+
+				console.log(
+					' -------- SCENE PARENT SIZE CHANGE: ',
+					'CSS PIXEL SIZE:',
+					change.borderBoxSize[0].inlineSize,
+					change.borderBoxSize[0].blockSize,
+					'PHYSICAL PIXEL SIZE',
+					change.devicePixelContentBoxSize[0].inlineSize,
+					change.devicePixelContentBoxSize[0].blockSize,
+				)
 			}
 		})
 
@@ -1195,6 +1234,8 @@ export class Scene extends ImperativeBase {
 	// we haven't taken that into consideration here.
 	#checkElementParentSize(x: number, y: number) {
 		const parentSize = this.__elementParentSize
+
+		console.log('scene canvas container size:', x, y)
 
 		// if we have a size change
 		if (parentSize.x != x || parentSize.y != y) {

@@ -148,7 +148,7 @@ export class Sizeable extends TreeNode {
 	 * array in connectedCallback, then disconnectedCallback will
 	 * automatically clean them up.
 	 */
-	// XXX Perhaps move this to a separate mixin, as it isn't really related to sizing.
+	// TODO Perhaps move this to a separate mixin, as it isn't really related to sizing.
 	_stopFns: Array<StopFunction> = []
 
 	override connectedCallback() {
@@ -228,6 +228,7 @@ export class Sizeable extends TreeNode {
 		) {
 			// TODO replace events with reactivity
 			this.emit('sizechange', {...calculatedSize})
+			if (this.id === 'scene') console.log('calculated size:', {...calculatedSize})
 		}
 	}
 

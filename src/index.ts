@@ -1,3 +1,8 @@
+// TODO split solid-js and other libs out from global, make them additional script tags.
+export * from 'solid-js'
+import {JSX, untrack, createComponent, getOwner} from 'solid-js'
+export {JSX, untrack, createComponent, getOwner}
+
 import {Class, Mixin} from 'lowclass'
 export {Class, Mixin}
 export * from '@lume/element'

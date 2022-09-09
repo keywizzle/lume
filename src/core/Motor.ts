@@ -51,8 +51,18 @@ class _Motor {
 		if (taskIndex <= this.#taskIterationIndex) this.#taskIterationIndex -= 1
 	}
 
-	/** Adds a render task that executes only once instead of repeatedly. */
-	once(fn: RenderTask) {
+	#onces = new Set<RenderTask>()
+
+	/**
+	 * Adds a render task that executes only once instead of repeatedly. Set
+	 * `allowDuplicates` to `false` to skip queueing a function if it is already
+	 * queued.
+	 */
+	once(fn: RenderTask, allowDuplicates = true) {
+		if (!allowDuplicates && this.#onces.has(fn)) return
+
+		this.#onces.add(fn)
+
 		// The `false` return value of the task tells Motor not to re-run it.
 		return this.addRenderTask((time, dt) => (fn(time, dt), false))
 	}
@@ -60,8 +70,13 @@ class _Motor {
 	// A Node calls this any time its properties have been modified (f.e. by the end user).
 	setNodeToBeRendered(node: ImperativeBase) {
 		// delete so it goes to the end
+		// TODO need this line? Reordering matters? Maybe only while in an
+		// animation frame, so modified node goes to the end and hence will be
+		// updated again if it was already passed in the update iteration.
+		// Come up with an example that breaks without this line.
 		if (this.#nodesToUpdate.has(node)) this.#nodesToUpdate.delete(node)
 
+		// console.log('set node to update', node)
 		this.#nodesToUpdate.add(node)
 
 		// noop if the loop's already started
@@ -82,7 +97,9 @@ class _Motor {
 	#taskIterationIndex = 0
 	#numberOfTasks = 0
 
+	// This is an array so that it is possible to add a task function more than once.
 	#allRenderTasks = [] as RenderTask[]
+
 	#nodesToUpdate = new Set<ImperativeBase>()
 	#modifiedScenes = new Set<Scene>()
 
@@ -111,9 +128,12 @@ class _Motor {
 
 		while (this.#loopStarted) {
 			const timestamp: number = await this.#animationFrame()
+			console.log('----------------------- ANIMATION FRAME')
+
 			const deltaTime: number = timestamp - lastTime
 
 			this.#runRenderTasks(timestamp, deltaTime)
+			this.#onces.clear()
 			this.#renderNodes(timestamp, deltaTime)
 
 			// If no tasks are left, stop the animation loop.
@@ -128,11 +148,7 @@ class _Motor {
 	}
 
 	#runRenderTasks(timestamp: number, deltaTime: number) {
-		for (
-			this.#taskIterationIndex = 0;
-			this.#taskIterationIndex < this.#numberOfTasks;
-			this.#taskIterationIndex += 1
-		) {
+		for (this.#taskIterationIndex = 0; this.#taskIterationIndex < this.#numberOfTasks; this.#taskIterationIndex += 1) {
 			const task = this.#allRenderTasks[this.#taskIterationIndex]
 
 			if (task(timestamp, deltaTime) === false) this.removeRenderTask(task)
@@ -142,7 +158,11 @@ class _Motor {
 	#renderNodes(timestamp: number, deltaTime: number) {
 		if (this.#nodesToUpdate.size === 0) return
 
+		// console.log('nodes to update:', [...this.#nodesToUpdate])
+
 		for (const node of this.#nodesToUpdate) {
+			if (node.id === 'one') debugger
+
 			// Skip any Node that no longer participates in rendering of a scene.
 			if (!node.scene) continue
 

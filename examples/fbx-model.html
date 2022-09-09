@@ -1,17 +1,6 @@
-<title>&lt;lume-fbx-model&gt;</title>
+<script src="./wrapper.js" title="<lume-fbx-model>"></script>
 
 <style>
-	html,
-	body {
-		width: 100%;
-		height: 100%;
-		margin: 0;
-		padding: 0;
-		background: #222;
-		touch-action: none;
-		overflow: hidden;
-	}
-
 	lume-node {
 		border: 5px solid deeppink;
 	}
@@ -43,4 +32,23 @@
 <script>
 	// Define all the LUME elements with their default names.
 	LUME.defineElements()
+
+	// Debug code for THREE BUG https://discourse.threejs.org/t/40262/3
+	console.log('window size:', window.innerWidth, window.innerHeight)
+
+	setTimeout(() => {
+		// document.body.style.width = '90%'
+		// document.body.style.height = '90%'
+		// model.size = [1, 1]
+
+		console.log('three matrix:', model.three.matrixWorld.elements.toString())
+
+		setTimeout(() => {
+			// document.body.style.width = '100%'
+			// document.body.style.height = '100%'
+			// model.size = [0, 0]
+
+			console.log('three matrix:', model.three.matrixWorld.elements.toString())
+		}, 100)
+	}, 100)
 </script>

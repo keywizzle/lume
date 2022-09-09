@@ -37,6 +37,8 @@ export class ScrollFling {
 
 	constructor(options: ScrollFlingOptions) {
 		Object.assign(this, options)
+		console.log('ScrollFling -----> ', this.y)
+		debugger
 	}
 
 	#onWheel = (event: WheelEvent) => {
@@ -71,6 +73,8 @@ export class ScrollFling {
 	// TODO switch to Pointer Events
 
 	start(): this {
+		console.log('ScrollFling 2 -----> ', this.y)
+
 		if (this.#isStarted) return this
 		this.#isStarted = true
 
@@ -89,6 +93,8 @@ export class ScrollFling {
 
 		// @ts-ignore, whyyyyy TypeScript
 		this.target.removeEventListener('wheel', this.#onWheel)
+
+		console.log('ScrollFling 3 -----> ', this.y)
 
 		return this
 	}
