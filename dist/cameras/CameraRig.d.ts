@@ -2,7 +2,7 @@ import { StopFunction } from '@lume/element';
 import { Element3D, Element3DAttributes } from '../core/Element3D.js';
 import { FlingRotation, ScrollFling, PinchFling } from '../interaction/index.js';
 import type { PerspectiveCamera } from './PerspectiveCamera.js';
-export declare type CameraRigAttributes = Element3DAttributes | 'initialPolarAngle' | 'minPolarAngle' | 'maxPolarAngle' | 'initialDistance' | 'minDistance' | 'maxDistance' | 'active' | 'dollySpeed' | 'interactive';
+export declare type CameraRigAttributes = Element3DAttributes | 'initialPolarAngle' | 'minPolarAngle' | 'maxPolarAngle' | 'initialDistance' | 'minDistance' | 'maxDistance' | 'active' | 'dollySpeed' | 'interactive' | 'dynamicDolly' | 'rotationSpeed' | 'dynamicRotation';
 export declare class CameraRig extends Element3D {
     #private;
     readonly hasShadow: true;
@@ -17,6 +17,9 @@ export declare class CameraRig extends Element3D {
     active: boolean;
     dollySpeed: number;
     interactive: boolean;
+    rotationSpeed: number;
+    dynamicDolly: boolean;
+    dynamicRotation: boolean;
     cam?: PerspectiveCamera;
     rotationYTarget?: Element3D;
     template: () => Node | Node[];

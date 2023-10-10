@@ -66,7 +66,11 @@ export class FlingRotation {
 	 */
 	readonly interactionContainer: Document | ShadowRoot | Element = document
 
-	factor = 1
+	/**
+	 * How much to rotate when the user clicks and drags, in degrees
+	 * per pixel.
+	 */
+	factor = 0.2
 
 	#aborter = new AbortController()
 
@@ -103,8 +107,12 @@ export class FlingRotation {
 		let deltaX = 0
 		let deltaY = 0
 
+		let moveTimestamp = performance.now()
+
 		this.#onMove = (event: PointerEvent) => {
 			if (event.pointerId !== this.#mainPointer) return
+
+			moveTimestamp = performance.now()
 
 			// We're not simply using event.movementX and event.movementY
 			// because of a Safari bug:
@@ -114,14 +122,14 @@ export class FlingRotation {
 			this.#lastX = event.x
 			this.#lastY = event.y
 
-			deltaX = movementY * 0.15 * this.factor
+			deltaX = movementY * this.factor
 			this.rotationXTarget.rotation.x = clamp(
 				this.rotationXTarget.rotation.x + deltaX,
 				this.minFlingRotationX,
 				this.maxFlingRotationX,
 			)
 
-			deltaY = -movementX * 0.15 * this.factor
+			deltaY = -movementX * this.factor
 			this.rotationYTarget.rotation.y = clamp(
 				this.rotationYTarget.rotation.y + deltaY,
 				this.minFlingRotationY,
@@ -153,7 +161,7 @@ export class FlingRotation {
 				// @ts-expect-error, whyyyy TypeScript TODO fix TypeScript lib.dom types.
 				this.interactionContainer.removeEventListener('pointermove', this.#onMove)
 
-				if (deltaX === 0 && deltaY === 0) return
+				if ((deltaX === 0 && deltaY === 0) || performance.now() - moveTimestamp > 100) return
 
 				// slow the rotation down based on former drag speed
 				this.rotationXTarget.rotation = (x, y, z) => {

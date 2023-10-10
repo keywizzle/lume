@@ -26,6 +26,9 @@ let CameraRig = class CameraRig extends Element3D {
     active = true;
     dollySpeed = 1;
     interactive = true;
+    rotationSpeed = 0.2;
+    dynamicDolly = false;
+    dynamicRotation = false;
     cam;
     rotationYTarget;
     template = () => html `
@@ -76,6 +79,7 @@ let CameraRig = class CameraRig extends Element3D {
             const flingRotation = (this.flingRotation = new FlingRotation({
                 interactionInitiator: this.scene,
                 rotationYTarget: this.rotationYTarget,
+                factor: this.rotationSpeed,
                 minFlingRotationX: this.minPolarAngle,
                 maxFlingRotationX: this.maxPolarAngle,
                 minFlingRotationY: this.minHorizontalAngle,
@@ -86,6 +90,14 @@ let CameraRig = class CameraRig extends Element3D {
                     flingRotation.start();
                 else
                     flingRotation.stop();
+            });
+            createEffect(() => {
+                const cam = this.cam;
+                if (!cam || !this.dynamicRotation)
+                    return;
+                const sens = (this.rotationSpeed * 5 * 180 * (cam.position.z - this.minDistance)) /
+                    (this.scene.perspective * 2 * this.minDistance);
+                this.flingRotation.factor = sens < 0.0001 ? 0.0001 : sens;
             });
             onCleanup(() => flingRotation?.stop());
         }), autorun(() => {
@@ -110,12 +122,20 @@ let CameraRig = class CameraRig extends Element3D {
                 if (!cam)
                     return;
                 untrack(() => cam.position).z = scrollFling.y;
+                if (!this.dynamicDolly)
+                    return;
+                this.scrollFling.scrollFactor =
+                    this.dollySpeed * ((scrollFling.y - this.minDistance + 0.001) / (this.maxDistance - this.minDistance));
             });
             createEffect(() => {
                 const cam = this.cam;
                 if (!cam)
                     return;
                 untrack(() => cam.position).z = pinchFling.x;
+                if (!this.dynamicDolly)
+                    return;
+                this.pinchFling.factor =
+                    this.dollySpeed * ((pinchFling.x - this.minDistance + 0.001) / (this.maxDistance - this.minDistance));
             });
             createEffect(() => {
                 if (this.interactive) {
@@ -216,6 +236,18 @@ __decorate([
     booleanAttribute(true),
     __metadata("design:type", Object)
 ], CameraRig.prototype, "interactive", void 0);
+__decorate([
+    numberAttribute(0.2),
+    __metadata("design:type", Object)
+], CameraRig.prototype, "rotationSpeed", void 0);
+__decorate([
+    booleanAttribute(false),
+    __metadata("design:type", Object)
+], CameraRig.prototype, "dynamicDolly", void 0);
+__decorate([
+    booleanAttribute(false),
+    __metadata("design:type", Object)
+], CameraRig.prototype, "dynamicRotation", void 0);
 __decorate([
     reactive,
     __metadata("design:type", Function)

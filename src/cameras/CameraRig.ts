@@ -22,6 +22,9 @@ export type CameraRigAttributes =
 	| 'active'
 	| 'dollySpeed'
 	| 'interactive'
+	| 'dynamicDolly'
+	| 'rotationSpeed'
+	| 'dynamicRotation'
 
 // TODO allow overriding the camera props, and make the default camera overridable via <slot>
 
@@ -200,6 +203,40 @@ export class CameraRig extends Element3D {
 	 */
 	@booleanAttribute(true) interactive = true
 
+	/**
+	 * @property {number} rotationSpeed
+	 *
+	 * *attribute*
+	 *
+	 * Default: `0.2`
+	 *
+	 * How much the camera rotates when the user clicks and drags, in degrees
+	 * per pixel.
+	 */
+	@numberAttribute(0.2) rotationSpeed = 0.2
+
+	/**
+	 * @property {boolean} dynamicDolly
+	 *
+	 * *attribute*
+	 *
+	 * When `true`, dolly speed is limited based on how close the camera's
+	 * position is to `minDistance`. Zooming in effectively lowers the
+	 * dolly speed, while zooming out effectively raises it.
+	 */
+	@booleanAttribute(false) dynamicDolly = false
+
+	/**
+	 * @property {boolean} dynamicRotation
+	 *
+	 * *attribute*
+	 *
+	 * When `true`, rotation sensitivity is limited based on how close the camera's
+	 * position is to `minDistance`. Zooming in effectively lowers the
+	 * sensitivity, while zooming out effectively raises it.
+	 */
+	@booleanAttribute(false) dynamicRotation = false
+
 	@reactive cam?: PerspectiveCamera
 
 	@reactive rotationYTarget?: Element3D
@@ -258,6 +295,7 @@ export class CameraRig extends Element3D {
 				const flingRotation = (this.flingRotation = new FlingRotation({
 					interactionInitiator: this.scene,
 					rotationYTarget: this.rotationYTarget,
+					factor: this.rotationSpeed,
 					minFlingRotationX: this.minPolarAngle,
 					maxFlingRotationX: this.maxPolarAngle,
 					minFlingRotationY: this.minHorizontalAngle,
@@ -267,6 +305,18 @@ export class CameraRig extends Element3D {
 				createEffect(() => {
 					if (this.interactive && !this.pinchFling?.interacting) flingRotation.start()
 					else flingRotation.stop()
+				})
+
+				createEffect(() => {
+					const cam = this.cam
+					if (!cam || !this.dynamicRotation) return
+
+					const sens =
+						(this.rotationSpeed * 5 * 180 * (cam.position.z - this.minDistance)) /
+						(this.scene!.perspective * 2 * this.minDistance)
+
+					// Don't let the sensitivity reach 0 (ie `cam.position.z` reaches `minDistance`)
+					this.flingRotation!.factor = sens < 0.0001 ? 0.0001 : sens
 				})
 
 				onCleanup(() => flingRotation?.stop())
@@ -295,6 +345,11 @@ export class CameraRig extends Element3D {
 					if (!cam) return
 
 					untrack(() => cam.position).z = scrollFling.y
+
+					if (!this.dynamicDolly) return
+
+					this.scrollFling!.scrollFactor =
+						this.dollySpeed * ((scrollFling!.y - this.minDistance + 0.001) / (this.maxDistance - this.minDistance))
 				})
 
 				createEffect(() => {
@@ -302,6 +357,11 @@ export class CameraRig extends Element3D {
 					if (!cam) return
 
 					untrack(() => cam.position).z = pinchFling.x
+
+					if (!this.dynamicDolly) return
+
+					this.pinchFling!.factor =
+						this.dollySpeed * ((pinchFling.x - this.minDistance + 0.001) / (this.maxDistance - this.minDistance))
 				})
 
 				createEffect(() => {
