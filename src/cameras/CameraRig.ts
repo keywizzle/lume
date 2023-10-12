@@ -316,7 +316,7 @@ export class CameraRig extends Element3D {
 						(this.scene!.perspective * 2 * this.minDistance)
 
 					// Don't let the sensitivity reach 0 (ie `cam.position.z` reaches `minDistance`)
-					this.flingRotation!.factor = sens < 0.0001 ? 0.0001 : sens
+					flingRotation.factor = sens < 0.0001 ? 0.0001 : sens
 				})
 
 				onCleanup(() => flingRotation?.stop())
@@ -348,7 +348,7 @@ export class CameraRig extends Element3D {
 
 					if (!this.dynamicDolly) return
 
-					this.scrollFling!.scrollFactor =
+					scrollFling.scrollFactor =
 						this.dollySpeed * ((scrollFling!.y - this.minDistance + 0.001) / (this.maxDistance - this.minDistance))
 				})
 
@@ -360,7 +360,7 @@ export class CameraRig extends Element3D {
 
 					if (!this.dynamicDolly) return
 
-					this.pinchFling!.factor =
+					pinchFling.factor =
 						this.dollySpeed * ((pinchFling.x - this.minDistance + 0.001) / (this.maxDistance - this.minDistance))
 				})
 
