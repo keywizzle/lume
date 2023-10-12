@@ -97,7 +97,7 @@ let CameraRig = class CameraRig extends Element3D {
                     return;
                 const sens = (this.rotationSpeed * 5 * 180 * (cam.position.z - this.minDistance)) /
                     (this.scene.perspective * 2 * this.minDistance);
-                this.flingRotation.factor = sens < 0.0001 ? 0.0001 : sens;
+                flingRotation.factor = sens < 0.0001 ? 0.0001 : sens;
             });
             onCleanup(() => flingRotation?.stop());
         }), autorun(() => {
@@ -124,7 +124,7 @@ let CameraRig = class CameraRig extends Element3D {
                 untrack(() => cam.position).z = scrollFling.y;
                 if (!this.dynamicDolly)
                     return;
-                this.scrollFling.scrollFactor =
+                scrollFling.scrollFactor =
                     this.dollySpeed * ((scrollFling.y - this.minDistance + 0.001) / (this.maxDistance - this.minDistance));
             });
             createEffect(() => {
@@ -134,7 +134,7 @@ let CameraRig = class CameraRig extends Element3D {
                 untrack(() => cam.position).z = pinchFling.x;
                 if (!this.dynamicDolly)
                     return;
-                this.pinchFling.factor =
+                pinchFling.factor =
                     this.dollySpeed * ((pinchFling.x - this.minDistance + 0.001) / (this.maxDistance - this.minDistance));
             });
             createEffect(() => {

@@ -1,10 +1,16 @@
-export class PLYLoader extends Loader<any, string> {
-    constructor(manager: any);
-    propertyNameMapping: {};
-    load(url: any, onLoad: any, onProgress: any, onError: any): void;
-    setPropertyNameMapping(mapping: any): void;
-    parse(data: any): BufferGeometry<import("three/src/core/BufferGeometry.js").NormalBufferAttributes>;
+import { BufferGeometry, Loader, LoadingManager } from 'three';
+
+export class PLYLoader extends Loader {
+    constructor(manager?: LoadingManager);
+    propertyNameMapping: object;
+
+    load(
+        url: string,
+        onLoad: (geometry: BufferGeometry) => void,
+        onProgress?: (event: ProgressEvent) => void,
+        onError?: (event: ErrorEvent) => void,
+    ): void;
+    loadAsync(url: string, onProgress?: (event: ProgressEvent) => void): Promise<BufferGeometry>;
+    setPropertyNameMapping(mapping: object): void;
+    parse(data: ArrayBuffer | string): BufferGeometry;
 }
-import { Loader } from "three/src/loaders/Loader.js";
-import { BufferGeometry } from "three/src/core/BufferGeometry.js";
-//# sourceMappingURL=PLYLoader.d.ts.map

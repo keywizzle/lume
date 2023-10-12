@@ -1,46 +1,42 @@
-export class TDSLoader extends Loader<any, string> {
-    constructor(manager: any);
+import { Color, Group, Loader, LoadingManager, Material, Mesh, Texture } from 'three';
+
+export class TDSLoader extends Loader {
+    constructor(manager?: LoadingManager);
     debug: boolean;
-    group: Group<import("three").Object3DEventMap> | null;
-    materials: any[];
-    meshes: any[];
-    load(url: [type], onLoad: Function, onProgress: Function, onError: Function): void;
-    parse(arraybuffer: ArrayBuffer, path: string): Group;
-    readFile(arraybuffer: ArrayBuffer, path: string): void;
-    readMeshData(chunk: Chunk, path: string): void;
-    readNamedObject(chunk: Chunk): void;
-    readMaterialEntry(chunk: Chunk, path: string): void;
-    readMesh(chunk: Chunk): Mesh;
-    readFaceArray(chunk: Chunk, mesh: Mesh): void;
-    readMap(chunk: Chunk, path: string): Texture;
-    readMaterialGroup(chunk: Chunk): Object;
-    readColor(chunk: Chunk): Color;
-    readPercentage(chunk: Chunk): number;
-    debugMessage(message: Object): void;
-}
-import { Loader } from "three/src/loaders/Loader.js";
-import { Group } from "three/src/objects/Group.js";
-declare class Chunk {
-    constructor(data: DataView, position: number, debugMessage: Function);
-    data: DataView;
-    offset: number;
+    group: Group;
+    manager: LoadingManager;
+    materials: Material[];
+    meshes: Mesh[];
     position: number;
-    debugMessage: () => void;
-    id: number;
-    size: number;
-    end: number;
-    readChunk(): Chunk | null;
-    get hexId(): string;
-    get endOfChunk(): boolean;
-    readByte(): number;
-    readFloat(): number;
-    readInt(): number;
-    readShort(): number;
-    readDWord(): number;
-    readWord(): number;
-    readString(): string;
+
+    load(
+        url: string,
+        onLoad: (object: Group) => void,
+        onProgress?: (event: ProgressEvent) => void,
+        onError?: (event: ErrorEvent) => void,
+    ): void;
+    loadAsync(url: string, onProgress?: (event: ProgressEvent) => void): Promise<Group>;
+    parse(arraybuffer: ArrayBuffer, path: string): Group;
+
+    debugMessage(message: object): void;
+    endChunk(chunk: object): void;
+    nextChunk(data: DataView, chunk: object): void;
+    readByte(data: DataView): number;
+    readChunk(data: DataView): object;
+    readColor(data: DataView): Color;
+    readDWord(data: DataView): number;
+    readFaceArray(data: DataView, mesh: Mesh): void;
+    readFile(arraybuffer: ArrayBuffer, path: string): void;
+    readFloat(data: DataView): number;
+    readInt(data: DataView): number;
+    readMap(data: DataView, path: string): Texture;
+    readMesh(data: DataView): Mesh;
+    readMeshData(data: DataView, path: string): void;
+    readMaterialEntry(data: DataView, path: string): void;
+    readMaterialGroup(data: DataView): object;
+    readNamedObject(data: DataView): void;
+    readShort(data: DataView): number;
+    readString(data: DataView, maxLength: number): string;
+    readWord(data: DataView): number;
+    resetPosition(): void;
 }
-import { Mesh } from "three/src/objects/Mesh.js";
-import { Color } from "three/src/math/Color.js";
-export {};
-//# sourceMappingURL=TDSLoader.d.ts.map
