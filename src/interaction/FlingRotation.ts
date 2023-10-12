@@ -226,7 +226,12 @@ export class FlingRotation {
 		this.rotationXTarget.rotation = () => false
 		this.rotationYTarget.rotation = () => false
 
-		this.#aborter.abort()
+		// this.#aborter.abort()
+
+		// @ts-expect-error, whyyyy TypeScript TODO fix TypeScript lib.dom types.
+		if (this.#onMove) this.interactionContainer.removeEventListener('pointermove', this.#onMove)
+		// @ts-expect-error, whyyyy TypeScript TODO fix TypeScript lib.dom types.
+		if (this.#onPointerUp) this.interactionContainer.removeEventListener('pointerup', this.#onPointerUp)
 
 		return this
 	}

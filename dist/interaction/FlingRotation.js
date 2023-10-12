@@ -97,7 +97,10 @@ export class FlingRotation {
         this.#pointerCount = 0;
         this.rotationXTarget.rotation = () => false;
         this.rotationYTarget.rotation = () => false;
-        this.#aborter.abort();
+        if (this.#onMove)
+            this.interactionContainer.removeEventListener('pointermove', this.#onMove);
+        if (this.#onPointerUp)
+            this.interactionContainer.removeEventListener('pointerup', this.#onPointerUp);
         return this;
     }
 }
